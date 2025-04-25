@@ -15,7 +15,6 @@ A lightweight, browser-based PDF editor that allows users to annotate and modify
 - **Undo Functionality**: Revert the last annotation action
 - **Zoom Controls**: Zoom in/out to adjust the view
 - **Multi-page Support**: Navigate through multiple PDF pages
-- **Page Preview**: Sidebar with page thumbnails for quick navigation
 - **Download**: Save the annotated PDF with all modifications
 
 ## Technical Implementation
@@ -29,9 +28,9 @@ A lightweight, browser-based PDF editor that allows users to annotate and modify
 ### Key Components
 
 1. **PDF Loading and Display**
-   - Drag and drop or file input for PDF upload
+   - File input for PDF upload
    - PDF.js for rendering PDF pages to canvas
-   - Dynamic page creation and management
+   - Dynamic page management
 
 2. **Annotation System**
    - Canvas-based drawing implementation
@@ -40,7 +39,6 @@ A lightweight, browser-based PDF editor that allows users to annotate and modify
    - State management for undo operations
 
 3. **Page Management**
-   - Thumbnail generation for sidebar
    - Page navigation system
    - Zoom level management
    - Fixed page gaps for consistent spacing
@@ -68,7 +66,7 @@ A lightweight, browser-based PDF editor that allows users to annotate and modify
 
 1. **Opening a PDF**
    - Click the upload area for load a PDF file
-   - The PDF will load and display with page previews in the sidebar
+   - The PDF will load and display with page previews with tools
 
 2. **Adding Annotations**
    - Select a tool from the toolbar (Circle, Square, Arrow, Line, Text)
@@ -77,7 +75,6 @@ A lightweight, browser-based PDF editor that allows users to annotate and modify
    - For text, click where you want to add text and type
 
 3. **Navigation**
-   - Use the sidebar thumbnails to jump to specific pages
    - Zoom in/out using the zoom controls
    - Scroll through pages in the main view
 
