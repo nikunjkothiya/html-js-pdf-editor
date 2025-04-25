@@ -67,7 +67,7 @@ A lightweight, browser-based PDF editor that allows users to annotate and modify
 ## Usage
 
 1. **Opening a PDF**
-   - Click the upload area or drag and drop a PDF file
+   - Click the upload area for load a PDF file
    - The PDF will load and display with page previews in the sidebar
 
 2. **Adding Annotations**
@@ -96,7 +96,6 @@ The editor is compatible with modern browsers that support:
 - HTML5 Canvas
 - PDF.js
 - ES6+ JavaScript features
-- Drag and Drop API
 
 ## Performance Considerations
 
