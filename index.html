@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Editor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Upload Page -->
+    <div class="upload-container" id="upload-container">
+        <div class="file-input-container" id="drop-area">
+            <h2>PDF Editor</h2>
+            <p>Click or drag and drop a PDF file here</p>
+            <input type="file" id="file-input" accept=".pdf" />
+        </div>
+    </div>
+
+    <!-- Editor Page -->
+    <div class="editor-page" id="editor-page">
+        <div class="editor-layout">
+            <!-- Sidebar with page previews -->
+            <div class="sidebar" id="page-previews">
+                <!-- Page previews will be added here -->
+            </div>
+
+            <!-- Main content -->
+            <div class="main-content">
+                <div class="toolbar">
+                    <button id="circle-tool">Circle</button>
+                    <button id="square-tool">Square</button>
+                    <button id="arrow-tool">Arrow</button>
+                    <button id="line-tool">Line</button>
+                    <button id="text-tool">Text</button>
+                    <button id="undo-btn">Undo</button>
+                    <div class="color-picker">
+                        <span>Color:</span>
+                        <div class="color-option green active" data-color="green"></div>
+                        <div class="color-option black" data-color="black"></div>
+                        <div class="color-option red" data-color="red"></div>
+                    </div>
+                    <div class="zoom-controls">
+                        <button id="zoom-out">-</button>
+                        <span class="zoom-level">100%</span>
+                        <button id="zoom-in">+</button>
+                    </div>
+                    <button id="download-btn" class="download-btn">Download PDF</button>
+                </div>
+                <div class="pdf-container" id="pdf-container">
+                    <div id="loading">Loading PDF...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="main.js" defer></script>
+</body>
+
+</html>
