@@ -42,6 +42,10 @@ let magnifierActive = false;
 let magnifierSize = 150;
 let magnifierZoom = 2;
 
+// Global history tracking
+let globalHistory = [];
+let globalHistoryIndex = -1; // Start at -1 to indicate no history yet
+
 // Elements
 const uploadContainer = document.getElementById('upload-container');
 const editorPage = document.getElementById('editor-page');
@@ -378,38 +382,94 @@ function handleCanvasClick(e) {
         const x = (e.clientX - rect.left) / zoomLevel;
         const y = (e.clientY - rect.top) / zoomLevel;
 
-        // Create temporary input field
-        const tempInput = document.createElement('input');
-        tempInput.className = 'temp-input';
-        tempInput.style.left = (e.clientX - rect.left + pageContainer.scrollLeft) + 'px';
-        tempInput.style.top = (e.clientY - rect.top + pageContainer.scrollTop - 8) + 'px'; // Adjust for text baseline
-        tempInput.style.color = currentColor;
-        tempInput.style.transform = `scale(${zoomLevel})`;
-        tempInput.style.transformOrigin = 'left top';
+        // Create temporary textarea field
+        const tempTextarea = document.createElement('textarea');
+        tempTextarea.className = 'temp-input';
+        tempTextarea.style.position = 'absolute';
+        tempTextarea.style.left = (e.clientX - rect.left + pageContainer.scrollLeft) + 'px';
+        tempTextarea.style.top = (e.clientY - rect.top + pageContainer.scrollTop - 8) + 'px';
+        tempTextarea.style.color = currentColor;
+        tempTextarea.style.transform = `scale(${zoomLevel})`;
+        tempTextarea.style.transformOrigin = 'left top';
+        tempTextarea.style.width = '300px';
+        tempTextarea.style.height = 'auto';
+        tempTextarea.style.minHeight = '24px';
+        tempTextarea.style.maxHeight = '200px';
+        tempTextarea.style.resize = 'none';
+        tempTextarea.style.overflow = 'auto';
+        tempTextarea.style.fontFamily = 'Arial, sans-serif';
+        tempTextarea.style.fontSize = '16px';
+        tempTextarea.style.lineHeight = '1.2';
+        tempTextarea.style.padding = '2px';
+        tempTextarea.style.border = '1px solid #ccc';
+        tempTextarea.style.background = 'rgba(255, 255, 255, 0.8)';
+        tempTextarea.style.zIndex = '1000';
 
-        pageContainer.appendChild(tempInput);
-        tempInput.focus();
+        // Create Save and Discard buttons
+        const btnContainer = document.createElement('div');
+        btnContainer.style.position = 'absolute';
+        btnContainer.style.left = (e.clientX - rect.left + pageContainer.scrollLeft + 310) + 'px';
+        btnContainer.style.top = (e.clientY - rect.top + pageContainer.scrollTop - 8) + 'px';
+        btnContainer.style.zIndex = '1001';
+        btnContainer.style.display = 'flex';
+        btnContainer.style.gap = '4px';
 
-        // Handle input completion
-        function completeInput() {
-            const text = tempInput.value.trim();
+        const saveBtn = document.createElement('button');
+        saveBtn.type = 'button';
+        saveBtn.title = 'Save';
+        saveBtn.innerHTML = '💾';
+        saveBtn.style.fontSize = '18px';
+        saveBtn.style.cursor = 'pointer';
+        saveBtn.style.background = '#e0ffe0';
+        saveBtn.style.border = '1px solid #ccc';
+        saveBtn.style.borderRadius = '3px';
+        saveBtn.style.padding = '2px 6px';
+
+        const discardBtn = document.createElement('button');
+        discardBtn.type = 'button';
+        discardBtn.title = 'Discard';
+        discardBtn.innerHTML = '❌';
+        discardBtn.style.fontSize = '18px';
+        discardBtn.style.cursor = 'pointer';
+        discardBtn.style.background = '#ffe0e0';
+        discardBtn.style.border = '1px solid #ccc';
+        discardBtn.style.borderRadius = '3px';
+        discardBtn.style.padding = '2px 6px';
+
+        btnContainer.appendChild(saveBtn);
+        btnContainer.appendChild(discardBtn);
+
+        pageContainer.appendChild(tempTextarea);
+        pageContainer.appendChild(btnContainer);
+        tempTextarea.focus();
+
+        // Auto-resize textarea as content grows
+        function autoResize() {
+            tempTextarea.style.height = 'auto';
+            tempTextarea.style.height = (tempTextarea.scrollHeight) + 'px';
+        }
+        tempTextarea.addEventListener('input', autoResize);
+
+        // Save action
+        function saveText() {
+            const text = tempTextarea.value.trim();
             if (text) {
                 // Get the annotation canvas for this page
                 const annotCanvas = pageContainer.querySelector('.annotation-canvas');
                 if (!annotCanvas) return;
-
                 const ctx = annotCanvas.getContext('2d');
-
-                // Draw text directly on canvas
                 ctx.font = '16px Arial';
                 ctx.fillStyle = currentColor;
-                ctx.fillText(text, x, y);
-
+                // Draw multi-line text
+                const lines = text.split('\n');
+                let lineHeight = 18;
+                lines.forEach((line, i) => {
+                    ctx.fillText(line, x, y + i * lineHeight);
+                });
                 // Save text annotation
                 if (!pageAnnotations[pageNum]) {
                     pageAnnotations[pageNum] = [];
                 }
-
                 pageAnnotations[pageNum].push({
                     tool: 'text',
                     color: currentColor,
@@ -418,24 +478,32 @@ function handleCanvasClick(e) {
                     y: y,
                     font: '16px Arial'
                 });
-
                 saveToHistory();
             }
-            tempInput.remove();
+            tempTextarea.remove();
+            btnContainer.remove();
         }
 
-        // Handle Enter key and blur events
-        tempInput.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                completeInput();
-            } else if (e.key === 'Escape') {
-                tempInput.remove();
+        // Discard action
+        function discardText() {
+            tempTextarea.remove();
+            btnContainer.remove();
+        }
+        saveBtn.addEventListener('click', saveText);
+        discardBtn.addEventListener('click', discardText);
+        tempTextarea.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                discardText();
             }
         });
-
-        tempInput.addEventListener('blur', completeInput);
-
+        tempTextarea.addEventListener('blur', function (e) {
+            // Only remove if neither button is focused
+            setTimeout(() => {
+                if (document.activeElement !== saveBtn && document.activeElement !== discardBtn) {
+                    discardText();
+                }
+            }, 100);
+        });
     } catch (error) {
         console.error('Error handling text input:', error);
     }
@@ -513,101 +581,92 @@ function drawArrow(ctx, fromX, fromY, toX, toY) {
     ctx.fill();
 }
 
-// Save current state to history
-function saveToHistory() {
-    if (!pageHistory[currentPage]) {
-        pageHistory[currentPage] = [{
-            annotations: [],
-            textElements: []
-        }];
-        currentHistoryIndex[currentPage] = 0;
-    }
+// Initialize history when loading PDF
+function initializeHistory() {
+    globalHistory = [];
+    globalHistoryIndex = -1;
 
-    // Remove any future states if we're not at the end of history
-    if (currentHistoryIndex[currentPage] < pageHistory[currentPage].length - 1) {
-        pageHistory[currentPage] = pageHistory[currentPage].slice(0, currentHistoryIndex[currentPage] + 1);
-    }
-
-    // Create a deep copy of the current state
-    const currentState = {
-        annotations: JSON.parse(JSON.stringify(annotations)),
-        textElements: textElements.map(el => ({
-            x: el.x,
-            y: el.y,
-            color: el.color,
-            text: el.text
-        }))
+    // Create initial state for all pages
+    const initialState = {
+        pageAnnotations: {},
+        pageTextElements: {},
+        currentPage: 1
     };
 
-    pageHistory[currentPage].push(currentState);
-    currentHistoryIndex[currentPage] = pageHistory[currentPage].length - 1;
+    // Initialize empty arrays for each page
+    for (let i = 1; i <= totalPages; i++) {
+        initialState.pageAnnotations[i] = [];
+        initialState.pageTextElements[i] = [];
+    }
+
+    globalHistory.push(initialState);
+    globalHistoryIndex = 0;
     updateUndoButton();
 }
 
-// Update undo button state
-function updateUndoButton() {
-    // Check if any page has history that can be undone
-    let canUndo = false;
-    for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
-        if (pageHistory[pageNum] && currentHistoryIndex[pageNum] > 0) {
-            canUndo = true;
-            break;
-        }
+// Save current state to history
+function saveToHistory() {
+    // Create a deep copy of the current state for all pages
+    const currentState = {
+        pageAnnotations: JSON.parse(JSON.stringify(pageAnnotations)),
+        pageTextElements: JSON.parse(JSON.stringify(pageTextElements)),
+        currentPage: currentPage
+    };
+
+    // Remove any future states if we're not at the end of history
+    if (globalHistoryIndex < globalHistory.length - 1) {
+        globalHistory = globalHistory.slice(0, globalHistoryIndex + 1);
     }
-    undoBtn.disabled = !canUndo;
+
+    // Only save if the state is different from the last saved state
+    const lastState = globalHistory[globalHistory.length - 1];
+    if (!lastState || JSON.stringify(currentState) !== JSON.stringify(lastState)) {
+        globalHistory.push(currentState);
+        globalHistoryIndex = globalHistory.length - 1;
+    }
+
+    updateUndoButton();
 }
 
 // Undo last action
 function undoLastAction() {
-    // Find the most recent page that has history
-    let pageToUndo = currentPage;
-    let hasHistory = false;
+    if (globalHistoryIndex > 0) { // Changed from >= 0 to > 0 to keep initial state
+        // Decrement history index
+        globalHistoryIndex--;
 
-    // First check current page
-    if (pageHistory[currentPage] && currentHistoryIndex[currentPage] > 0) {
-        hasHistory = true;
-    } else {
-        // If current page has no history, check other pages
+        // Get the previous state
+        const state = globalHistory[globalHistoryIndex];
+
+        // Update all pages' annotations and text elements
+        pageAnnotations = JSON.parse(JSON.stringify(state.pageAnnotations));
+        pageTextElements = JSON.parse(JSON.stringify(state.pageTextElements));
+
+        // Update current page's annotations and textElements
+        annotations = pageAnnotations[currentPage] || [];
+        textElements = pageTextElements[currentPage] || [];
+
+        // Redraw annotations for all pages
         for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
-            if (pageHistory[pageNum] && currentHistoryIndex[pageNum] > 0) {
-                pageToUndo = pageNum;
-                hasHistory = true;
-                break;
-            }
-        }
-    }
-
-    if (hasHistory) {
-        currentHistoryIndex[pageToUndo]--;
-        const state = pageHistory[pageToUndo][currentHistoryIndex[pageToUndo]];
-
-        // Update the annotations and text elements for the affected page
-        const pageAnnots = JSON.parse(JSON.stringify(state.annotations));
-        const pageTexts = JSON.parse(JSON.stringify(state.textElements));
-
-        // Update page storage
-        pageAnnotations[pageToUndo] = pageAnnots;
-        pageTextElements[pageToUndo] = pageTexts;
-
-        // Update current page's annotations if we're on that page
-        if (pageToUndo === currentPage) {
-            annotations = pageAnnots;
-            textElements = pageTexts;
-        }
-
-        // Redraw annotations for the affected page
-        const pageContainer = document.querySelector(`.page-container[data-page-number="${pageToUndo}"]`);
-        if (pageContainer) {
-            const annotCanvas = pageContainer.querySelector('.annotation-canvas');
-            if (annotCanvas) {
-                const ctx = annotCanvas.getContext('2d');
-                ctx.clearRect(0, 0, annotCanvas.width, annotCanvas.height);
-                drawAnnotationsOnCanvas(ctx, pageAnnots);
+            const pageContainer = document.querySelector(`.page-container[data-page-number="${pageNum}"]`);
+            if (pageContainer) {
+                const annotCanvas = pageContainer.querySelector('.annotation-canvas');
+                if (annotCanvas) {
+                    const ctx = annotCanvas.getContext('2d');
+                    ctx.clearRect(0, 0, annotCanvas.width, annotCanvas.height);
+                    if (pageAnnotations[pageNum]) {
+                        drawAnnotationsOnCanvas(ctx, pageAnnotations[pageNum]);
+                    }
+                }
             }
         }
 
         updateUndoButton();
     }
+}
+
+// Update undo button state
+function updateUndoButton() {
+    undoBtn.disabled = globalHistoryIndex <= 0; // Changed from < 0 to <= 0 to keep initial state
 }
 
 // Handle file selection
@@ -670,6 +729,9 @@ function loadPdf(data) {
         pdfDoc = pdf;
         totalPages = pdf.numPages;
 
+        // Initialize history before creating previews
+        initializeHistory();
+
         // Create previews for all pages
         pagePreviews.innerHTML = '';
         for (let i = 1; i <= totalPages; i++) {
@@ -678,6 +740,9 @@ function loadPdf(data) {
 
         // Render all pages
         renderAllPages();
+
+        // Save initial state after rendering
+        saveToHistory();
     }).catch(function (error) {
         console.error('Error loading PDF:', error);
         alert('Failed to load PDF. Please try again with a different file.');
@@ -932,7 +997,12 @@ async function downloadPDF() {
                     if (annotation.tool === 'text') {
                         tempCtx.font = annotation.font;
                         tempCtx.fillStyle = annotation.color;
-                        tempCtx.fillText(annotation.text, annotation.x, annotation.y);
+                        // Draw multi-line text
+                        const lines = annotation.text.split('\n');
+                        let lineHeight = 18;
+                        lines.forEach((line, i) => {
+                            tempCtx.fillText(line, annotation.x, annotation.y + i * lineHeight);
+                        });
                     } else {
                         drawAnnotationsOnCanvas(tempCtx, [annotation]);
                     }
@@ -950,6 +1020,15 @@ async function downloadPDF() {
             unit: 'px',
             format: [firstPage.width, firstPage.height]
         });
+
+        // Set PDF to open at 100% zoom (actual size)
+        if (pdf.internal && pdf.internal.write) {
+            pdf.internal.write('/OpenAction << /S /GoTo /D [0 /XYZ null null 1] >>');
+        }
+
+        if (pdf.setDisplayMode) {
+            pdf.setDisplayMode('fullwidth', 'continuous', 'UseNone');
+        }
 
         pageCanvases.forEach((canvas, index) => {
             if (index > 0) {
